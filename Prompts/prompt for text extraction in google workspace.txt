@@ -1,0 +1,110 @@
+You are extracting every action item from a daily standup.
+
+The input is a Gemini meeting-notes document with sections such as Summary, Decisions, Next steps, and Details, followed by the complete raw transcript with timestamps.
+
+The transcript is the sole source of truth.
+
+The notes are incomplete — the Next steps list omits entire speakers — and use a category-label style you must never imitate:
+
+* Never begin a task with a label like `Request Information:` or any `Verb Noun:` prefix.
+* Never copy the notes' wording or name spellings.
+
+Read the entire transcript turn by turn all the way to the very end, past the formal goodbyes, because tasks are often stated in post-meeting discussion.
+
+Capture every distinct action each speaker commits to:
+
+* Anything they are doing, building, fixing, reviewing, sending, contacting someone about, following up on, waiting on, or that is pending someone's approval or reply.
+* Any meeting, call, forum, or event they say they will attend, host, or have scheduled.
+* Tasks that arise because another speaker asks them to do something.
+
+Examples:
+
+* "I have a meeting at 11 with X" = one task.
+* "I attend a monthly forum" = one task.
+
+Waiting and pending items are always separate standalone tasks and are the most commonly missed. Before finishing any speaker, re-check their turns for things they said they are waiting on.
+
+When in doubt, include it; omitting a real task is the only unacceptable error.
+
+Example:
+
+> "I'll wait for the list from Mario and then run the end-to-end test"
+
+This is exactly two bullets:
+
+1. Waiting for the list from Mario.
+2. Running the end-to-end test.
+
+Never combine them into one bullet.
+
+If a statement joins multiple actions with:
+
+* and
+* then
+* also
+* before
+* after
+* once
+
+output one bullet per action.
+
+Almost every speaker states between two and six tasks. If any speaker ends with fewer than two, treat it as a missed-task signal and re-read their turns.
+
+Begin your output with one line:
+
+`Speakers:`
+
+Followed by each speaker in order of first appearance in the transcript, never reordered, each written as:
+
+`Name(A/B)`
+
+Where:
+
+* A = that speaker's item count in the Next steps section, counted honestly even if zero.
+* B = the number of bullets you give them.
+
+Rules:
+
+* B must be at least A.
+* A is only a sanity floor and never a target.
+* The Next steps list is sparse, so B should normally exceed A.
+
+After extracting, perform two mandatory checklist passes, re-deriving anything missing directly from the transcript:
+## This is the prompt that achieved a ~90-95% recall with no task merges, or owner attribution issues prevalent in standard meeting summaries from gemini.
+## Since Studio has no API access, all fixes were prompt-based: added a per-person task count self-check, used Gemini counts as a completeness floor, and explicitly covered commonly missed task types.
+## Main focus for the iterations were prevention of task losses as Gemini "Next Steps" was missing ~30–40% of tasks, further eliminating task merges, and improving run-to-run consistency.
+
+## START OF PROMPT ##
+1. Every item in Next steps must appear in your output unless the transcript contains nothing supporting it.
+2. Scan the Details section for any task it mentions that you missed.
+
+Then output the bullets grouped by speaker in Speakers-line order, with each speaker's tasks in the order spoken.
+
+Each speaker's bullet count must equal their B value.
+
+Name handling:
+
+* Copy every name character for character exactly as the transcript spells it.
+* Never expand, shorten, correct, or replace a name.
+
+Task wording:
+
+* Write each task as one short plain verb phrase close to the speaker's own words.
+
+Bullet format:
+
+* Format every bullet exactly as: `• *Name*: Task.`
+* Exactly one asterisk immediately before and one immediately after the name.
+* Nowhere else.
+* Never double asterisks.
+* Never bold the task text.
+
+Output formatting:
+
+* Each bullet starts on its own new line using a real line break.
+* Never output the literal characters `\n`.
+* No blank lines.
+* No numbering.
+* No section titles.
+* No category labels or prefixes.
+* No emojis.

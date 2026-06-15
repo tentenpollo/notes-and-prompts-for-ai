@@ -1,0 +1,126 @@
+
+<h2 class="sr-only">AI model performance analysis across standup extraction runs, showing improvement over time with better prompting</h2>
+
+<style>
+  .metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 1rem 0 1.5rem; }
+  .metric-card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 1rem; }
+  .metric-label { font-size: 13px; color: var(--color-text-secondary); margin: 0 0 4px; }
+  .metric-val { font-size: 22px; font-weight: 500; margin: 0; }
+  .metric-sub { font-size: 12px; color: var(--color-text-tertiary); margin: 2px 0 0; }
+  .section-label { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); margin: 1.5rem 0 0.5rem; letter-spacing: 0.03em; text-transform: uppercase; }
+  .issue-row { display: flex; align-items: center; gap: 10px; margin: 6px 0; font-size: 13px; }
+  .pill { font-size: 11px; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+  .pill-bad { background: #FCEBEB; color: #A32D2D; }
+  .pill-ok { background: #FAEEDA; color: #854F0B; }
+  .pill-good { background: #EAF3DE; color: #3B6D11; }
+  .phase-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0.5rem 0 1.5rem; }
+  .phase-card { border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; background: var(--color-background-primary); }
+  .phase-title { font-size: 13px; font-weight: 500; margin: 0 0 4px; }
+  .phase-score { font-size: 28px; font-weight: 500; margin: 4px 0; }
+  .phase-sub { font-size: 12px; color: var(--color-text-secondary); margin: 0; }
+</style>
+
+<div style="padding: 1rem 0 0;">
+
+  <div class="metric-grid">
+    <div class="metric-card">
+      <p class="metric-label">Total runs</p>
+      <p class="metric-val">~330</p>
+      <p class="metric-sub">across all test phases</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Format score (early)</p>
+      <p class="metric-val" style="color: #A32D2D;">~30%</p>
+      <p class="metric-sub">plain text dump, no structure</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Format score (late)</p>
+      <p class="metric-val" style="color: #3B6D11;">~95%</p>
+      <p class="metric-sub">bullet + italic names, consistent</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Speaker header</p>
+      <p class="metric-val" style="color: #3B6D11;">100%</p>
+      <p class="metric-sub">present in all final-phase runs</p>
+    </div>
+  </div>
+
+  <p class="section-label">Three distinct phases</p>
+  <div class="phase-grid">
+    <div class="phase-card" style="border-top: 3px solid #E24B4A;">
+      <p class="phase-title">Phase 1 — Unstructured</p>
+      <p class="phase-score" style="color: #E24B4A;">~30%</p>
+      <p class="phase-sub">Rows 2–4 (~4 runs). Single-line blob, no bullets. Names bold but output is a wall of text. No line breaks rendered.</p>
+    </div>
+    <div class="phase-card" style="border-top: 3px solid #EF9F27;">
+      <p class="phase-title">Phase 2 — Inconsistent structure</p>
+      <p class="phase-score" style="color: #BA7517;">~65%</p>
+      <p class="phase-sub">Rows 5–244 (~240 runs). Bullets appear, but format oscillates — sometimes `**bold**`, sometimes plain, sometimes `•` bullets vs `*`. Literal `\n` leaks occasionally.</p>
+    </div>
+    <div class="phase-card" style="border-top: 3px solid #639922;">
+      <p class="phase-title">Phase 3 — Stable</p>
+      <p class="phase-score" style="color: #3B6D11;">~95%</p>
+      <p class="phase-sub">Rows 244–2086 (~86 runs). Settled on `• *Name*: task` pattern. Speaker participation ratios added (e.g. `Thomas Moore(2/4)`). Real meeting titles with timestamps.</p>
+    </div>
+  </div>
+
+  <p class="section-label">Observed defects by type</p>
+
+  <div style="background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
+    <div class="issue-row"><span class="pill pill-bad">Phase 1</span><span>Output is a single run-on string — no bullet breaks, no newlines</span></div>
+    <div class="issue-row"><span class="pill pill-bad">Phase 2</span><span>Literal <code>\n</code> characters in some rows instead of actual line breaks</span></div>
+    <div class="issue-row"><span class="pill pill-ok">Phase 2</span><span>Format inconsistency: mixes `**bold**` and plain-name runs across same test input</span></div>
+    <div class="issue-row"><span class="pill pill-ok">Phase 2</span><span>Minor wording drift — "follow up" vs "follow-up", article insertion ("the open PRs" vs "open PRs")</span></div>
+    <div class="issue-row"><span class="pill pill-ok">Phase 2–3</span><span>Occasional over-summarization vs verbatim extraction (e.g. "Monitor Google Chat" trimmed differently)</span></div>
+    <div class="issue-row"><span class="pill pill-good">Phase 3</span><span>Speaker participation ratio added — model inferring metadata beyond literal action items</span></div>
+    <div class="issue-row"><span class="pill pill-good">Phase 3</span><span>Real meeting data appearing — model generalizes well beyond the synthetic test set</span></div>
+  </div>
+
+  <p class="section-label">Format consistency over runs</p>
+  <div style="position: relative; width: 100%; height: 220px; margin-bottom: 1rem;">
+    <canvas id="scoreChart" role="img" aria-label="Line chart showing format quality score rising from ~30% in early runs to ~95% in later runs, with a plateau in the middle at ~65%">Format quality: early runs ~30%, mid-phase ~65%, late runs ~95%.</canvas>
+  </div>
+  <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 8px; font-size: 12px; color: var(--color-text-secondary);">
+    <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; border-radius: 2px; background: #378ADD;"></span>Estimated format quality score</span>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const labels = ['Run 1','Run 2','Run 3','Run 4','Run 20','Run 50','Run 100','Run 150','Run 200','Run 244','Run 260','Run 280','Run 310','Run 330'];
+const data =   [28,     30,     62,     65,     60,      68,      63,       70,       65,       85,       92,       94,       95,       96];
+new Chart(document.getElementById('scoreChart'), {
+  type: 'line',
+  data: {
+    labels,
+    datasets: [{
+      label: 'Format quality (%)',
+      data,
+      borderColor: '#378ADD',
+      backgroundColor: 'rgba(55,138,221,0.08)',
+      borderWidth: 2,
+      pointRadius: 4,
+      pointBackgroundColor: '#378ADD',
+      fill: true,
+      tension: 0.35
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: {
+        min: 0, max: 100,
+        ticks: { callback: v => v + '%', font: { size: 12 } },
+        grid: { color: 'rgba(128,128,128,0.1)' }
+      },
+      x: {
+        ticks: { font: { size: 11 }, maxRotation: 30, autoSkip: false },
+        grid: { display: false }
+      }
+    }
+  }
+});
+</script>
